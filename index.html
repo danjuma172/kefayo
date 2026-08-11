@@ -17,6 +17,7 @@
             --bg-overlay: rgba(0, 20, 8, 0.80);
             --card-bg: rgba(255, 255, 255, 0.12);
             --input-bg: rgba(255, 255, 255, 0.08);
+            --error: #ff6b6b;
         }
 
         * {
@@ -275,7 +276,7 @@
         }
         .btn-apply:active { transform: translateY(-1px); }
 
-        /* ===== Modal Styles (full-screen feel on mobile) ===== */
+        /* ===== Modal Styles ===== */
         .overlay {
             position: fixed;
             inset: 0;
@@ -397,7 +398,7 @@
             color: white;
             font-family: inherit;
             outline: none;
-            font-size: 16px; /* prevents iOS zoom */
+            font-size: 16px;
             transition: all 0.3s ease;
             min-height: 52px;
         }
@@ -484,7 +485,6 @@
             letter-spacing: 0.8px;
         }
 
-        /* ===== Tablet & desktop ===== */
         @media (min-width: 768px) {
             header { padding-top: 40px; }
             .hero-section h1 { font-size: 36px; }
@@ -493,7 +493,6 @@
             .dashboard-strip { grid-template-columns: repeat(4, 1fr); }
         }
 
-        /* ===== Small phones ===== */
         @media (max-width: 370px) {
             .hero-section h1 { font-size: 26px; }
             .card { padding: 30px 22px; }
@@ -510,7 +509,6 @@
             .dash-item .dash-lbl { font-size: 10px; }
         }
 
-        /* ===== Landscape phones ===== */
         @media (orientation: landscape) and (max-height: 500px) {
             header { padding: 8px 5% 8px; }
             .hero-section { margin: 6px 0 12px; }
@@ -601,19 +599,28 @@
                 <p class="step-subtitle">Tell us who you are. All information is kept confidential and used only for loan processing.</p>
 
                 <div class="form-group">
-                    <label for="fName">First Name</label>
-                    <input type="text" id="fName" placeholder="Enter first name" autocomplete="given-name">
-                    <div class="field-error" id="errFName">Please enter your first name.</div>
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" placeholder="Enter your first name" autocomplete="given-name">
+                    <div class="field-error" id="errFirstName">Please enter your first name.</div>
                 </div>
                 <div class="form-group">
-                    <label for="lName">Last Name</label>
-                    <input type="text" id="lName" placeholder="Enter last name" autocomplete="family-name">
-                    <div class="field-error" id="errLName">Please enter your last name.</div>
+                    <label for="middleName">Middle Name <span style="color:rgba(255,255,255,0.4);font-weight:400;text-transform:none;">(optional)</span></label>
+                    <input type="text" id="middleName" placeholder="Enter your middle name (optional)" autocomplete="additional-name">
+                </div>
+                <div class="form-group">
+                    <label for="surname">Surname</label>
+                    <input type="text" id="surname" placeholder="Enter your surname" autocomplete="family-name">
+                    <div class="field-error" id="errSurname">Please enter your surname.</div>
                 </div>
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
                     <input type="tel" id="phone" placeholder="e.g. 0785345678" autocomplete="tel">
                     <div class="field-error" id="errPhone">Please enter a valid phone number.</div>
+                </div>
+                <div class="form-group">
+                    <label for="idNumber">ID Number</label>
+                    <input type="text" id="idNumber" placeholder="e.g. 63-123456A78" autocomplete="off">
+                    <div class="field-error" id="errIdNumber">Please enter a valid ID number.</div>
                 </div>
 
                 <button class="btn-next" id="btnStep1">Continue</button>
@@ -628,17 +635,31 @@
                 <div class="form-group">
                     <label for="purpose">Loan Purpose</label>
                     <select id="purpose">
-                        <option>Education</option>
-                        <option>Business Expansion</option>
-                        <option>Medical Expenses</option>
-                        <option>Personal Use</option>
-                        <option>Other</option>
+                        <option value="Education">Education</option>
+                        <option value="Business Expansion">Business Expansion</option>
+                        <option value="Medical Expenses">Medical Expenses</option>
+                        <option value="Personal Use">Personal Use</option>
+                        <option value="Home Improvement">Home Improvement</option>
+                        <option value="Debt Consolidation">Debt Consolidation</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="income">Monthly Income (USD)</label>
                     <input type="number" id="income" placeholder="e.g. 1500" min="0" inputmode="numeric">
                     <div class="field-error" id="errIncome">Please enter a valid monthly income.</div>
+                </div>
+                <div class="form-group">
+                    <label for="employmentStatus">Employment Status</label>
+                    <select id="employmentStatus">
+                        <option value="Employed Full-Time">Employed Full-Time</option>
+                        <option value="Employed Part-Time">Employed Part-Time</option>
+                        <option value="Self-Employed">Self-Employed</option>
+                        <option value="Business Owner">Business Owner</option>
+                        <option value="Retired">Retired</option>
+                        <option value="Student">Student</option>
+                        <option value="Unemployed">Unemployed</option>
+                    </select>
                 </div>
 
                 <label class="checkbox-label">
@@ -657,11 +678,13 @@
                 <p class="step-subtitle">Please check your details before we submit your application.</p>
 
                 <div class="calc-summary review">
-                    <div class="summary-row"><span>Applicant</span><span id="sumName">&mdash;</span></div>
+                    <div class="summary-row"><span>Full Name</span><span id="sumName">&mdash;</span></div>
                     <div class="summary-row"><span>Phone</span><span id="sumPhone">&mdash;</span></div>
+                    <div class="summary-row"><span>ID Number</span><span id="sumId">&mdash;</span></div>
                     <div class="summary-row"><span>Loan Amount</span><span id="sumAmt">&mdash;</span></div>
                     <div class="summary-row"><span>Purpose</span><span id="sumPurp">&mdash;</span></div>
                     <div class="summary-row"><span>Repayment</span><span id="sumPer">&mdash;</span></div>
+                    <div class="summary-row"><span>Employment</span><span id="sumEmployment">&mdash;</span></div>
                 </div>
 
                 <button class="btn-next" id="btnFinish">Confirm &amp; Proceed</button>
@@ -674,10 +697,8 @@
         <p>&copy; 2026 CABS, a member of the Old Mutual Group &bull; Zimbabwe. All rights reserved.</p>
     </footer>
 
-    <!-- Scripts -->
     <script>
         // ---- Loan Calculator Logic ----
-        // Interest rate tier: months <= 6 -> 4%, <= 12 -> 4.5%, <= 24 -> 5.5%, <= 36 -> 6.5%, else 8.5%
         function getRate(months) {
             if (months <= 6) return 4;
             if (months <= 12) return 4.5;
@@ -714,7 +735,6 @@
             document.getElementById('perInput').value = period;
             document.getElementById('rateText').textContent = (annualRate * 100).toFixed(1) + '% p.a';
 
-            // Standard EMI Formula
             const emi = (amount * monthlyRate * Math.pow(1 + monthlyRate, period)) / (Math.pow(1 + monthlyRate, period) - 1);
             const totalRepayment = emi * period;
 
@@ -744,7 +764,6 @@
             document.body.style.overflow = '';
         }
 
-        // ---- Step indicator rendering ----
         function renderIndicator(step) {
             document.querySelectorAll('.step-dot').forEach(dot => {
                 const s = parseInt(dot.dataset.step);
@@ -764,20 +783,22 @@
             renderIndicator(n);
 
             if (n === 3) {
-                const fullName = document.getElementById('fName').value.trim() + ' ' + document.getElementById('lName').value.trim();
+                const fullName = document.getElementById('firstName').value.trim() + 
+                                (document.getElementById('middleName').value.trim() ? ' ' + document.getElementById('middleName').value.trim() : '') +
+                                ' ' + document.getElementById('surname').value.trim();
                 document.getElementById('sumName').textContent = fullName.trim() || '\u2014';
                 document.getElementById('sumPhone').textContent = document.getElementById('phone').value.trim() || '\u2014';
+                document.getElementById('sumId').textContent = document.getElementById('idNumber').value.trim() || '\u2014';
                 document.getElementById('sumAmt').textContent = document.getElementById('amtText').textContent;
                 document.getElementById('sumPurp').textContent = document.getElementById('purpose').value;
                 document.getElementById('sumPer').textContent = document.getElementById('perText').textContent;
+                document.getElementById('sumEmployment').textContent = document.getElementById('employmentStatus').value;
             }
 
-            // Scroll modal back to top on each step change
             const card = document.querySelector('.mini-page');
             if (card) card.scrollTop = 0;
         }
 
-        // ---- Inline validation helpers ----
         function showError(fieldId, errId) {
             const f = document.getElementById(fieldId);
             if (f) f.classList.add('invalid');
@@ -796,31 +817,36 @@
             if (e) e.classList.remove('show');
         }
 
-        // Clear inline errors while typing/selecting
         function clearFieldError(fieldId, errId) {
             const field = document.getElementById(fieldId);
             field.addEventListener('input', function() { hideError(fieldId, errId); });
             field.addEventListener('change', function() { hideError(fieldId, errId); });
         }
 
-        clearFieldError('fName', 'errFName');
-        clearFieldError('lName', 'errLName');
+        clearFieldError('firstName', 'errFirstName');
+        clearFieldError('surname', 'errSurname');
         clearFieldError('phone', 'errPhone');
+        clearFieldError('idNumber', 'errIdNumber');
         clearFieldError('income', 'errIncome');
         document.getElementById('agree').addEventListener('change', function() { hideError('agree', 'errAgree'); });
 
         // Step 1 validation
         document.getElementById('btnStep1').addEventListener('click', function() {
-            const fName = document.getElementById('fName').value.trim();
-            const lName = document.getElementById('lName').value.trim();
+            const firstName = document.getElementById('firstName').value.trim();
+            const surname = document.getElementById('surname').value.trim();
             const phone = document.getElementById('phone').value.trim();
+            const idNumber = document.getElementById('idNumber').value.trim();
 
-            hideError('fName', 'errFName'); hideError('lName', 'errLName'); hideError('phone', 'errPhone');
+            hideError('firstName', 'errFirstName');
+            hideError('surname', 'errSurname');
+            hideError('phone', 'errPhone');
+            hideError('idNumber', 'errIdNumber');
 
             let ok = true;
-            if (!fName || fName.length < 2) { showError('fName', 'errFName'); ok = false; }
-            else if (!lName || lName.length < 2) { showError('lName', 'errLName'); ok = false; }
-            else if (!/^[0-9+\s-]{7,20}$/.test(phone)) { showError('phone', 'errPhone'); ok = false; }
+            if (!firstName || firstName.length < 2) { showError('firstName', 'errFirstName'); ok = false; }
+            if (!surname || surname.length < 2) { showError('surname', 'errSurname'); ok = false; }
+            if (!/^[0-9+\s-]{7,20}$/.test(phone)) { showError('phone', 'errPhone'); ok = false; }
+            if (!idNumber || idNumber.length < 4) { showError('idNumber', 'errIdNumber'); ok = false; }
 
             if (ok) goStep(2);
         });
@@ -830,30 +856,41 @@
             const income = document.getElementById('income').value;
             const agree = document.getElementById('agree').checked;
 
-            hideError('income', 'errIncome'); hideError('agree', 'errAgree');
+            hideError('income', 'errIncome');
+            hideError('agree', 'errAgree');
 
             let ok = true;
             if (!income || income <= 0) { showError('income', 'errIncome'); ok = false; }
-            else if (!agree) { showError('agree', 'errAgree'); ok = false; }
+            if (!agree) { showError('agree', 'errAgree'); ok = false; }
 
             if (ok) goStep(3);
         });
 
-        // Step 3: finish — forward details to login.html
+        // Step 3: finish
         document.getElementById('btnFinish').addEventListener('click', function() {
-            const fName = document.getElementById('fName').value.trim();
-            const lName = document.getElementById('lName').value.trim();
+            const firstName = document.getElementById('firstName').value.trim();
+            const middleName = document.getElementById('middleName').value.trim();
+            const surname = document.getElementById('surname').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const idNumber = document.getElementById('idNumber').value.trim();
             const amount = document.getElementById('amtRange').value;
             const purpose = document.getElementById('purpose').value;
             const period = document.getElementById('perRange').value;
+            const income = document.getElementById('income').value;
+            const employmentStatus = document.getElementById('employmentStatus').value;
 
             const queryParams = new URLSearchParams({
                 type: 'flex_loan',
-                firstName: fName,
-                lastName: lName,
+                firstName: firstName,
+                middleName: middleName,
+                surname: surname,
+                phone: phone,
+                idNumber: idNumber,
                 amount: amount,
                 purpose: purpose,
-                period: period
+                period: period,
+                income: income,
+                employmentStatus: employmentStatus
             });
 
             window.location.href = 'login.html?' + queryParams.toString();
@@ -865,17 +902,14 @@
         document.getElementById('backTo1').addEventListener('click', function(e) { e.preventDefault(); goStep(1); });
         document.getElementById('backTo2').addEventListener('click', function(e) { e.preventDefault(); goStep(2); });
 
-        // Close modal when clicking outside
         document.getElementById('applyOverlay').addEventListener('click', function(e) {
             if (e.target === this) closeApply();
         });
 
-        // Close modal with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeApply();
         });
 
-        // Initialize on Load
         window.addEventListener('DOMContentLoaded', update);
     </script>
 

